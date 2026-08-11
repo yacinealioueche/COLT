@@ -1,0 +1,9 @@
+public class XLP_MatchResult {
+
+    public XLP_MatchAction action;
+
+    public Opportunity targetOpportunity;
+
+    public String matchReason;
+
+}

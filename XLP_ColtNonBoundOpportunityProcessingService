@@ -1,0 +1,77 @@
+public with sharing class XLP_ColtNonBoundOpportunityProcessingService {
+
+    public static void process(
+        List<XLP_ColtNonBoundOpportunity__e> events
+    ) {
+
+        Set<String> submissionIds = new Set<String>();
+        Set<String> quoteIds = new Set<String>();
+        Set<String> policyIds = new Set<String>();
+        Set<String> accountExternalIds = new Set<String>();
+
+        for(XLP_ColtNonBoundOpportunity__e evt : events){
+
+            submissionIds.add(evt.XLP_SubmissionId__c);
+
+            if(evt.XLP_QuoteId__c != null){
+                quoteIds.add(evt.XLP_QuoteId__c);
+            }
+
+            if(evt.XLP_PolicyId__c != null){
+                policyIds.add(evt.XLP_PolicyId__c);
+            }
+
+            if(evt.XLP_ClientName__c != null){
+                accountExternalIds.add(
+                    evt.XLP_ClientName__c
+                );
+            }
+        }
+
+        XLP_RepositoryResult repoResult =
+            XLP_ColtNonBoundOpportunityRepository.getCandidates(
+                submissionIds,
+                quoteIds,
+                policyIds,
+                accountExternalIds
+            );
+
+        List<Opportunity> toInsert =
+            new List<Opportunity>();
+
+        List<Opportunity> toUpdate =
+            new List<Opportunity>();
+
+        for(XLP_ColtNonBoundOpportunity__e evt : events){
+
+            XLP_MatchResult matchResult =
+                XLP_ColtNonBoundOpportunityMatchingEngine.match(
+                    evt,
+                    repoResult
+                );
+
+            Opportunity opp =
+                XLP_ColtNonBoundOpportunityFactory.buildOpportunity(
+                    evt,
+                    matchResult,
+                    repoResult
+                );
+
+            if(matchResult.action ==
+                XLP_MatchAction.UPDATE){
+
+                toUpdate.add(opp);
+
+            } else {
+
+                toInsert.add(opp);
+
+            }
+        }
+
+        XLP_ColtNonBoundOpportunityDmlService.save(
+            toInsert,
+            toUpdate
+        );
+    }
+}

@@ -1,0 +1,32 @@
+public with sharing class XLP_ColtNonBoundOpportunityDmlService {
+
+    public static void save(
+
+        List<Opportunity> toInsert,
+
+        List<Opportunity> toUpdate
+
+    ){
+
+        try{
+
+            if(!toUpdate.isEmpty()){
+                update toUpdate;
+            }
+
+            if(!toInsert.isEmpty()){
+                insert toInsert;
+            }
+
+        }
+        catch(Exception ex){
+
+            XLP_ColtNonBoundOpportunityLogService.log(
+                'DML',
+                ex.getMessage()
+            );
+
+            throw ex;
+        }
+    }
+}

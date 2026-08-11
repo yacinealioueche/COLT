@@ -1,0 +1,71 @@
+public with sharing class XLP_ColtNonBoundOpportunityMatchingEngine {
+
+    public static XLP_MatchResult match(
+
+        XLP_ColtNonBoundOpportunity__e evt,
+
+        XLP_RepositoryResult repoResult
+
+    ){
+
+        XLP_MatchResult result =
+            new XLP_MatchResult();
+
+        String mask = evt.MatchMask__c;
+
+        List<String> candidateKeys =
+            buildCandidateKeys(evt, mask);
+
+        for(String key : candidateKeys){
+
+            if(repoResult.coltExternalKeyMap.containsKey(key)){
+
+                result.action =
+                    XLP_MatchAction.UPDATE;
+
+                result.targetOpportunity =
+                    repoResult.coltExternalKeyMap.get(key);
+
+                result.matchReason =
+                    'Key Match';
+
+                return result;
+            }
+        }
+
+        result.action =
+            XLP_MatchAction.INSERT;
+
+        result.matchReason =
+            'No Match';
+
+        return result;
+    }
+
+    private static List<String> buildCandidateKeys(
+
+        XLP_ColtNonBoundOpportunity__e evt,
+        String mask
+
+    ){
+
+        List<String> keys =
+            new List<String>();
+
+        if(mask == '110'){
+
+            keys.add(
+                evt.XLP_SubmissionId__c
+                + '|'
+                + evt.XLP_QuoteId__c
+            );
+
+            keys.add(
+                evt.XLP_SubmissionId__c
+            );
+
+        }
+
+        return keys;
+    }
+}

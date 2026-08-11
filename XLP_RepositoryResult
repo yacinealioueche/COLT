@@ -1,0 +1,9 @@
+public class XLP_RepositoryResult {
+
+    public Map<String, Opportunity> coltExternalKeyMap =
+        new Map<String, Opportunity>();
+
+    public Map<String, Account> accountMap =
+        new Map<String, Account>();
+
+}

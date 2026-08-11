@@ -1,0 +1,21 @@
+public with sharing class XLP_ColtNonBoundOpportunityLogService {
+
+    public static void log(
+
+        String process,
+        String message
+
+    ){
+
+        Log_Entry__c logRecord =
+            new Log_Entry__c();
+
+        logRecord.Process__c =
+            process;
+
+        logRecord.Message__c =
+            message;
+
+        insert logRecord;
+    }
+}

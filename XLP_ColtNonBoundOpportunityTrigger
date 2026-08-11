@@ -1,0 +1,9 @@
+trigger XLP_ColtNonBoundOpportunityTrigger
+on XLP_ColtNonBoundOpportunity__e
+(after insert) {
+
+    XLP_ColtNonBoundOpportunityHandler.handleAfterInsert(
+        Trigger.New
+    );
+
+}

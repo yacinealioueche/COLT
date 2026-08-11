@@ -1,0 +1,28 @@
+public with sharing class XLP_ColtExternalKeyUtil {
+
+    public static String generateKey(
+
+        String submissionId,
+        String quoteId,
+        String policyId,
+        String mask
+
+    ){
+
+        if(mask == '100'){
+            return submissionId;
+        }
+
+        if(mask == '110'){
+            return submissionId + '|' + quoteId;
+        }
+
+        if(mask == '111'){
+            return submissionId + '|'
+                 + quoteId + '|'
+                 + policyId;
+        }
+
+        return null;
+    }
+}

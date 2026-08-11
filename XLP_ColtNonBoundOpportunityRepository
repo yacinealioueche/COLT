@@ -1,0 +1,61 @@
+public with sharing class XLP_ColtNonBoundOpportunityRepository {
+
+    public static XLP_RepositoryResult getCandidates(
+
+        Set<String> submissionIds,
+        Set<String> quoteIds,
+        Set<String> policyIds,
+        Set<String> accountExternalIds
+
+    ) {
+
+        XLP_RepositoryResult result =
+            new XLP_RepositoryResult();
+
+        List<Opportunity> opps = [
+
+            SELECT
+                Id,
+                StageName,
+                ColtExternalKey__c,
+                XLP_SubmissionId__c,
+                XLP_QuoteId__c,
+                XLP_PolicyId__c,
+                AccountId
+            FROM Opportunity
+            WHERE XLP_SubmissionId__c IN :submissionIds
+               OR XLP_QuoteId__c IN :quoteIds
+               OR XLP_PolicyId__c IN :policyIds
+
+        ];
+
+        for(Opportunity opp : opps){
+
+            result.coltExternalKeyMap.put(
+                opp.ColtExternalKey__c,
+                opp
+            );
+        }
+
+        List<Account> accounts = [
+
+            SELECT
+                Id,
+                Name,
+                XLP_AxaXLId__c
+            FROM Account
+            WHERE XLP_AxaXLId__c IN :accountExternalIds
+
+        ];
+
+        for(Account acc : accounts){
+
+            result.accountMap.put(
+                acc.XLP_AxaXLId__c,
+                acc
+            );
+        }
+
+        return result;
+    }
+}

@@ -1,0 +1,65 @@
+public with sharing class XLP_ColtNonBoundOpportunityFactory {
+
+    public static Opportunity buildOpportunity(
+
+        XLP_ColtNonBoundOpportunity__e evt,
+
+        XLP_MatchResult matchResult,
+
+        XLP_RepositoryResult repoResult
+
+    ){
+
+        Opportunity opp;
+
+        if(matchResult.action ==
+            XLP_MatchAction.UPDATE){
+
+            opp = matchResult.targetOpportunity;
+
+        } else {
+
+            opp = new Opportunity();
+
+            opp.Name =
+                'Submission '
+                + evt.XLP_SubmissionId__c;
+
+            opp.CloseDate =
+                Date.today().addMonths(1);
+        }
+
+        Account account =
+            repoResult.accountMap.get(
+                evt.XLP_ClientName__c
+            );
+
+        if(account != null){
+
+            opp.AccountId =
+                account.Id;
+        }
+
+        opp.StageName =
+            evt.StageName__c;
+
+        opp.XLP_SubmissionId__c =
+            evt.XLP_SubmissionId__c;
+
+        opp.XLP_InceptionDate__c =
+            evt.XLP_InceptionDate__c;
+
+        opp.XLP_EstimatedPremium__c =
+            evt.XLP_EstimatedPremium__c;
+
+        opp.ColtExternalKey__c =
+            XLP_ColtExternalKeyUtil.generateKey(
+                evt.XLP_SubmissionId__c,
+                evt.XLP_QuoteId__c,
+                evt.XLP_PolicyId__c,
+                evt.MatchMask__c
+            );
+
+        return opp;
+    }
+}

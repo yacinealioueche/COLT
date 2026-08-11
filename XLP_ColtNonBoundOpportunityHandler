@@ -1,0 +1,13 @@
+public with sharing class XLP_ColtNonBoundOpportunityHandler {
+
+    public static void handleAfterInsert(
+        List<XLP_ColtNonBoundOpportunity__e> events
+    ) {
+
+        XLP_ColtNonBoundOpportunityProcessingService.process(
+            events
+        );
+
+    }
+
+}

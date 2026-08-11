@@ -6,4 +6,11 @@ public class XLP_MatchResult {
 
     public String matchReason;
 
+public enum XLP_MatchAction {
+
+    INSERT,
+    UPDATE
+
+}
+
 }

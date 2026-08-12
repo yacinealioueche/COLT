@@ -1,0 +1,30 @@
+List<XLP_ColtNonBoundOpportunity__e> events =
+    new List<XLP_ColtNonBoundOpportunity__e>();
+
+for(Integer i=1 ; i<=100 ; i++){
+
+    events.add(
+        new XLP_ColtNonBoundOpportunity__e(
+
+            XLP_SubmissionId__c =
+                'SUB-' + i,
+
+            StageName__c =
+                'Prospecting',
+
+            MatchMask__c =
+                '100',
+
+            XLP_ClientName__c =
+                'CLIENT-' + i,
+
+            XLP_InceptionDate__c =
+                Date.today(),
+
+            XLP_EstimatedPremium__c =
+                1000 * i
+        )
+    );
+}
+
+EventBus.publish(events);

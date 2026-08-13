@@ -5,6 +5,7 @@ public with sharing class XLP_ColtNonBoundOpportunityRepository {
         Set<String> submissionIds,
         Set<String> quoteIds,
         Set<String> policyIds,
+        set<String> expiringRefIds
         Set<String> accountExternalIds
 
     ) {
@@ -16,25 +17,69 @@ public with sharing class XLP_ColtNonBoundOpportunityRepository {
 
             SELECT
                 Id,
-                StageName,
-                ColtExternalKey__c,
                 XLP_SubmissionId__c,
                 XLP_QuoteId__c,
                 XLP_PolicyId__c,
-                AccountId
+                XLP_Expiring_Reference__c
             FROM Opportunity
             WHERE XLP_SubmissionId__c IN :submissionIds
-               OR XLP_QuoteId__c IN :quoteIds
-               OR XLP_PolicyId__c IN :policyIds
+            OR XLP_QuoteId__c IN :quoteIds
+            OR XLP_PolicyId__c IN :policyIds
+            OR XLP_Expiring_Reference__c IN :expiringRefIds
 
         ];
 
         for(Opportunity opp : opps){
 
-            result.coltExternalKeyMap.put(
-                opp.ColtExternalKey__c,
-                opp
-            );
+            if(opp.XLP_SubmissionId__c != null &&
+               opp.XLP_QuoteId__c == null &&
+               opp.XLP_PolicyId__c == null){
+            
+                result.submissionOnlyMap.put(
+                    opp.XLP_SubmissionId__c,
+                    opp
+                );
+            }
+
+            if(opp.XLP_SubmissionId__c == null &&
+               opp.XLP_QuoteId__c != null &&
+               opp.XLP_PolicyId__c == null){
+            
+                result.quoteOnlyMap.put(
+                    opp.XLP_QuoteId__c,
+                    opp
+                );
+            }
+
+            if(opp.XLP_SubmissionId__c != null &&
+               opp.XLP_QuoteId__c != null){
+            
+                String key =
+                    opp.XLP_SubmissionId__c
+                    + '|'
+                    + opp.XLP_QuoteId__c;
+            
+                result.submissionQuoteMap.put(
+                    key,
+                    opp
+                );
+            }
+
+            if(opp.XLP_PolicyId__c != null){
+            
+                result.policyMap.put(
+                    opp.XLP_PolicyId__c,
+                    opp
+                );
+            }
+
+            if(opp.XLP_Expiring_Reference__c != null){
+                result.expiringRefMap.put(
+                    opp.XLP_Expiring_Reference__c,
+                    opp
+                );
+            }
+        
         }
 
         List<Account> accounts = [

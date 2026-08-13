@@ -1,71 +1,269 @@
-public with sharing class XLP_ColtNonBoundOpportunityMatchingEngine {
+public with sharing class XLP_ColtOpportunityMatchingEngine {
 
     public static XLP_MatchResult match(
+        XLP_ColtBoundOpportunity__e evt,
+        XLP_ColtRepositoryResult repoResult
+    ) {
+
+        //==================================================
+        // 1. Expiring Reference Match
+        //==================================================
+
+        if(String.isNotBlank(evt.XLP_ExpiringReferenceId__c)) {
+
+            Opportunity opp =
+                repoResult.expiringRefMap.get(
+                    evt.XLP_ExpiringReferenceId__c
+                );
+
+            if(opp != null) {
+
+                return buildUpdateResult(
+                    opp,
+                    'Expiring Reference Match'
+                );
+            }
+        }
+
+        //==================================================
+        // 2. Mask Driven Matching
+        //==================================================
+
+        String mask = evt.XLP_MatchMask__c;
+
+        switch on mask {
+
+            when '100' {
+
+                return process100(
+                    evt,
+                    repoResult
+                );
+
+            }
+
+            when '110' {
+
+                return process110(
+                    evt,
+                    repoResult
+                );
+
+            }
+
+            when '001' {
+
+                return process001(
+                    evt,
+                    repoResult
+                );
+
+            }
+
+            when else {
+
+                return buildInsertResult(
+                    'Unsupported Mask'
+                );
+
+            }
+        }
+    }
+
+    /**
+     * Mask 100
+     *
+     * Match:
+     * Submission populated
+     * Quote null
+     * Policy null
+     */
+    private static XLP_MatchResult process100(
 
         XLP_ColtNonBoundOpportunity__e evt,
-
         XLP_RepositoryResult repoResult
 
-    ){
+    ) {
+
+        Opportunity opp =
+            repoResult.submissionOnlyMap.get(
+                evt.XLP_SubmissionId__c
+            );
+
+        if(opp != null) {
+
+            return buildUpdateResult(
+                opp,
+                'Submission Match'
+            );
+        }
+
+        return buildInsertResult(
+            'No Submission Match'
+        );
+    }
+
+    /**
+     * Mask 110
+     *
+     * Priority:
+     *
+     * 1 Submission only
+     * 2 Quote only
+     * 3 Exact Submission + Quote
+     * 4 Insert
+     */
+    private static XLP_MatchResult process110(
+
+        XLP_ColtNonBoundOpportunity__e evt,
+        XLP_RepositoryResult repoResult
+
+    ) {
+
+        Opportunity opp;
+
+        //--------------------------------------------------
+        // Priority 1
+        // Submission only
+        //--------------------------------------------------
+
+        opp =
+            repoResult.submissionOnlyMap.get(
+                evt.XLP_SubmissionId__c
+            );
+
+        if(opp != null) {
+
+            return buildUpdateResult(
+                opp,
+                'Submission Enrichment'
+            );
+        }
+
+        //--------------------------------------------------
+        // Priority 2
+        // Quote only
+        //--------------------------------------------------
+
+        opp =
+            repoResult.quoteOnlyMap.get(
+                evt.XLP_QuoteId__c
+            );
+
+        if(opp != null) {
+
+            return buildUpdateResult(
+                opp,
+                'Quote Enrichment'
+            );
+        }
+
+        //--------------------------------------------------
+        // Priority 3
+        // Exact Submission + Quote
+        //--------------------------------------------------
+
+        String key =
+            evt.XLP_SubmissionId__c
+            + '|'
+            + evt.XLP_QuoteId__c;
+
+        opp =
+            repoResult.submissionQuoteMap.get(
+                key
+            );
+
+        if(opp != null) {
+
+            return buildUpdateResult(
+                opp,
+                'Submission Quote Match'
+            );
+        }
+
+        //--------------------------------------------------
+        // Priority 4
+        //--------------------------------------------------
+
+        return buildInsertResult(
+            'No Match'
+        );
+    }
+
+    /**
+     * Mask 001
+     *
+     * Match on policy only.
+     *
+     * Ignore Submission & Quote.
+     */
+    private static XLP_MatchResult process001(
+
+        XLP_ColtNonBoundOpportunity__e evt,
+        XLP_RepositoryResult repoResult
+
+    ) {
+
+        Opportunity opp =
+            repoResult.policyMap.get(
+                evt.XLP_PolicyId__c
+            );
+
+        if(opp != null) {
+
+            return buildUpdateResult(
+                opp,
+                'Policy Match'
+            );
+        }
+
+        return buildInsertResult(
+            'No Policy Match'
+        );
+    }
+
+    //======================================================
+    // Helpers
+    //======================================================
+
+    private static XLP_MatchResult buildUpdateResult(
+
+        Opportunity opp,
+        String reason
+
+    ) {
 
         XLP_MatchResult result =
             new XLP_MatchResult();
 
-        String mask = evt.MatchMask__c;
-
-        List<String> candidateKeys =
-            buildCandidateKeys(evt, mask);
-
-        for(String key : candidateKeys){
-
-            if(repoResult.coltExternalKeyMap.containsKey(key)){
-
-                result.action =
-                    XLP_MatchAction.UPDATE;
-
-                result.targetOpportunity =
-                    repoResult.coltExternalKeyMap.get(key);
-
-                result.matchReason =
-                    'Key Match';
-
-                return result;
-            }
-        }
-
         result.action =
-            XLP_MatchAction.INSERT;
+            XLP_MatchResult.Action.UPDATE_RECORD;
+
+        result.targetOpportunity =
+            opp;
 
         result.matchReason =
-            'No Match';
+            reason;
 
         return result;
     }
 
-    private static List<String> buildCandidateKeys(
+    private static XLP_MatchResult buildInsertResult(
 
-        XLP_ColtNonBoundOpportunity__e evt,
-        String mask
+        String reason
 
-    ){
+    ) {
 
-        List<String> keys =
-            new List<String>();
+        XLP_MatchResult result =
+            new XLP_MatchResult();
 
-        if(mask == '110'){
+        result.action =
+            XLP_MatchResult.Action.CREATE;
 
-            keys.add(
-                evt.XLP_SubmissionId__c
-                + '|'
-                + evt.XLP_QuoteId__c
-            );
+        result.matchReason =
+            reason;
 
-            keys.add(
-                evt.XLP_SubmissionId__c
-            );
-
-        }
-
-        return keys;
+        return result;
     }
+
 }

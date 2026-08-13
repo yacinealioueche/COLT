@@ -1,9 +1,20 @@
-public class XLP_RepositoryResult {
+public class XLP_ColtRepositoryResult {
 
-    public Map<String, Opportunity> coltExternalKeyMap =
-        new Map<String, Opportunity>();
+    public Map<String,Opportunity> expiringRefMap =
+        new Map<String,Opportunity>();
 
-    public Map<String, Account> accountMap =
-        new Map<String, Account>();
+    public Map<String,Opportunity> submissionOnlyMap =
+        new Map<String,Opportunity>();
 
+    public Map<String,Opportunity> quoteOnlyMap =
+        new Map<String,Opportunity>();
+
+    public Map<String,Opportunity> submissionQuoteMap =
+        new Map<String,Opportunity>();
+
+    public Map<String,Opportunity> policyMap =
+        new Map<String,Opportunity>();
+
+    public Map<String,Account> accountMap =
+        new Map<String,Account>();
 }

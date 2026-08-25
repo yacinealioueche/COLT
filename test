@@ -28,3 +28,295 @@ for(Integer i=1 ; i<=100 ; i++){
 }
 
 EventBus.publish(events);
+
+////////////////////////////
+searchGroups(
+    searchTerm = 'ABC',
+    accountId = selectedAccountId
+)
+
+///////////////
+
+public with sharing class RecordGroupController {
+
+    @AuraEnabled(cacheable=true)
+    public static List<XLP_Record_Group__c> searchGroups(
+        String searchTerm,
+        List<Id> opportunityIds
+    ) {
+
+        if(String.isBlank(searchTerm)
+            || opportunityIds == null
+            || opportunityIds.isEmpty()) {
+
+            return new List<XLP_Record_Group__c>();
+        }
+
+        Opportunity sampleOpp = [
+
+            SELECT XLP_ClientName__c
+
+            FROM Opportunity
+
+            WHERE Id IN :opportunityIds
+
+            LIMIT 1
+        ];
+
+        Id accountId = sampleOpp.XLP_ClientName__c;
+
+        return [
+
+            SELECT Id,
+                   Group_Name__c
+
+            FROM XLP_Record_Group__c
+
+            WHERE Account__c = :accountId
+
+            AND Group_Name__c LIKE :('%' + searchTerm + '%')
+
+            ORDER BY Group_Name__c
+
+            LIMIT 20
+        ];
+    }
+}
+///////
+
+<template if:true={showLinkModal}>
+
+    <section
+        class="slds-modal slds-fade-in-open"
+        role="dialog">
+
+        <div class="slds-modal__container">
+
+            <header class="slds-modal__header">
+                <h2 class="slds-text-heading_medium">
+                    Link Opportunities
+                </h2>
+            </header>
+
+            <div class="slds-modal__content slds-p-around_medium">
+
+                <lightning-radio-group
+                    name="groupOption"
+                    label="Group Option"
+                    options={groupOptions}
+                    value={groupMode}
+                    onchange={handleGroupModeChange}>
+                </lightning-radio-group>
+
+                <!-- EXISTING GROUP -->
+
+                <template if:false={isCreateNewGroup}>
+
+                    <lightning-input
+                        label="Search Existing Group"
+                        value={searchKey}
+                        onchange={handleSearch}>
+                    </lightning-input>
+
+                    <template if:true={showSearchResults}>
+
+                        <div
+                            class="slds-box slds-scrollable_y"
+                            style="max-height:200px">
+
+                            <template
+                                for:each={groupResults}
+                                for:item="group">
+
+                                <div
+                                    key={group.Id}
+                                    class="slds-p-around_x-small
+                                           slds-border_bottom"
+                                    data-id={group.Id}
+                                    data-name={group.Group_Name__c}
+                                    onclick={selectGroup}>
+
+                                    {group.Group_Name__c}
+
+                                </div>
+
+                            </template>
+
+                        </div>
+
+                    </template>
+
+                </template>
+
+                <!-- NEW GROUP -->
+
+                <template if:true={isCreateNewGroup}>
+
+                    <lightning-input
+                        label="New Group Name"
+                        value={newGroupName}
+                        onchange={handleNewGroupName}>
+                    </lightning-input>
+
+                </template>
+
+            </div>
+
+            <footer class="slds-modal__footer">
+
+                <lightning-button
+                    label="Cancel"
+                    onclick={closeLinkModal}>
+                </lightning-button>
+
+                <lightning-button
+                    variant="brand"
+                    label="Save"
+                    onclick={saveLink}>
+                </lightning-button>
+
+            </footer>
+
+        </div>
+
+    </section>
+
+    <div class="slds-backdrop slds-backdrop_open"></div>
+
+</template>
+
+////////////////
+
+import { LightningElement, track } from 'lwc';
+
+import searchGroups
+    from '@salesforce/apex/RecordGroupController.searchGroups';
+
+showLinkModal = false;
+
+selectedIds = [];
+
+groupMode = 'existing';
+
+searchKey = '';
+
+newGroupName = '';
+
+groupResults = [];
+
+selectedGroupId;
+
+selectedGroupName;
+
+showSearchResults = false;
+
+groupOptions = [
+    {
+        label: 'Existing Group',
+        value: 'existing'
+    },
+    {
+        label: 'New Group',
+        value: 'new'
+    }
+];
+
+get isCreateNewGroup() {
+return this.groupMode === 'new';
+}
+
+handleGroupModeChange(event) {
+
+    this.groupMode =
+        event.detail.value;
+}
+
+handleSearch(event) {
+
+    this.searchKey =
+        event.target.value;
+
+    if(!this.searchKey ||
+       this.searchKey.length < 2) {
+
+        this.groupResults = [];
+
+        this.showSearchResults = false;
+
+        return;
+    }
+
+    searchGroups({
+
+        searchTerm: this.searchKey,
+
+        opportunityIds: this.selectedIds
+
+    })
+    .then(result => {
+
+        this.groupResults = result;
+
+        this.showSearchResults =
+            result.length > 0;
+    })
+    .catch(error => {
+
+        console.error(error);
+    });
+}
+
+selectGroup(event) {
+
+    this.selectedGroupId =
+        event.currentTarget.dataset.id;
+
+    this.selectedGroupName =
+        event.currentTarget.dataset.name;
+
+    this.searchKey =
+        this.selectedGroupName;
+
+    this.showSearchResults = false;
+}
+
+handleNewGroupName(event) {
+
+    this.newGroupName =
+        event.target.value;
+}
+
+saveLink() {
+
+    if(this.groupMode === 'existing') {
+
+        console.log(
+            'Selected Existing Group Id',
+            this.selectedGroupId
+        );
+
+        // call linkToExistingGroup()
+
+    } else {
+
+        console.log(
+            'Create New Group',
+            this.newGroupName
+        );
+
+        // call createAndLinkGroup()
+    }
+}
+
+handleRowSelection(event) {
+
+    this.selectedIds =
+        event.detail.selectedRows.map(
+            row => row.Id
+        );
+
+    console.log(
+        'Selected Opportunities',
+        JSON.stringify(this.selectedIds)
+    );
+}

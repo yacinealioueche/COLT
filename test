@@ -320,3 +320,83 @@ handleRowSelection(event) {
         JSON.stringify(this.selectedIds)
     );
 }
+
+//////////////////// update save 
+public with sharing class
+XLP_ColtNonBoundOpportunityDmlService {
+ 
+public static void save(
+ 
+List<Opportunity> toInsert,
+List<Opportunity> toUpdate
+ 
+){
+ 
+if(!toUpdate.isEmpty()){
+ 
+Database.SaveResult[] updateResults =
+Database.update(
+toUpdate,
+false
+);
+ 
+processResults(
+updateResults,
+toUpdate,
+'UPDATE'
+);
+}
+ 
+if(!toInsert.isEmpty()){
+ 
+Database.SaveResult[] insertResults =
+Database.insert(
+toInsert,
+false
+);
+ 
+processResults(
+insertResults,
+toInsert,
+'INSERT'
+);
+}
+}
+ 
+private static void processResults(
+ 
+Database.SaveResult[] results,
+List<Opportunity> opps,
+String operation
+ 
+){
+ 
+List<Log_Entry__c> logs =
+new List<Log_Entry__c>();
+ 
+for(Integer i=0; i<results.size(); i++){
+ 
+if(!results[i].isSuccess()){
+ 
+for(Database.Error err :
+results[i].getErrors()){
+ 
+Log_Entry__c log =
+new Log_Entry__c();
+ 
+log.Message__c =
+operation +
+' failed : ' +
+err.getMessage();
+ 
+logs.add(log);
+}
+}
+}
+ 
+if(!logs.isEmpty()){
+ 
+insert logs;
+}
+}
+}
